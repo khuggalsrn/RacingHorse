@@ -9,5 +9,7 @@ public enum Situation {
 };
 public class SystemClass : MonoBehaviour
 {
-    
+    void Start(){
+        Time.timeScale = 10f;
+    }
 }
