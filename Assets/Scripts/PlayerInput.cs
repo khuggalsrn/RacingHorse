@@ -15,21 +15,21 @@ public class PlayerInput : MonoBehaviour
     /// <summary> Racing strategy </summary>
     public Strategy mystr;
     /// <summary> First Hp = MaxHP </summary>
-    float MaxHP = 0;
+    public float MaxHP = 0;
     /// <summary> CurHP </summary>
     [SerializeField]
-    float HP = 0;
+    public float HP = 0;
     /// <summary> Velocity will be related Speed & Intelligence </summary>
     [SerializeField]
-    float Basic_Velocity, Max_Velocity = 0;
+    public float Basic_Velocity, Max_Velocity = 0;
     /// <summary> Acceleration will be related Power </summary>
     float Basic_Acceleration = 0;
     /// <summary> CurTarget = Basic + Additional </summary>
     [SerializeField]
-    float Cur_Target_Velocity = 0;
+    public float Cur_Target_Velocity = 0;
     /// <summary> CurTarget = Basic + Additional </summary>
     [SerializeField]
-    float Cur_Acceleration = 0;
+    public float Cur_Acceleration = 0;
     /// <summary> Overpace probability will be related Intelligence </summary>
     float GetOverpace_Probability = 0;
     /// <summary> OverpaceCorrection, Stamina is consumed in proportion to this. </summary>
@@ -354,7 +354,7 @@ public class PlayerInput : MonoBehaviour
         if (other.name == "InMid") InMid();
         if (other.name == "Inlast") InLast();
         if (other.name == "Onspurt") OnSpurtLine();
-        if (other.name == "gall") Time.timeScale = 0;
+        if (other.name == "gall") Time.timeScale = 0.1f;
     }
     private void OnTriggerStay(Collider other)
     {
