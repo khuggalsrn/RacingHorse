@@ -10,7 +10,8 @@ public class PlayerInput : MonoBehaviour
     /// <summary> physics body </summary> ///
     public Rigidbody rigid;
     /// <summary> Status </summary>
-    [SerializeField] public int Speed, Stamina, Power, Intelligence;
+    [SerializeField] 
+    public int Speed, Stamina, Power, Intelligence;
     /// <summary> Racing strategy </summary>
     public Strategy mystr;
     /// <summary> First Hp = MaxHP </summary>
@@ -31,6 +32,8 @@ public class PlayerInput : MonoBehaviour
     float Cur_Acceleration = 0;
     /// <summary> Overpace probability will be related Intelligence </summary>
     float GetOverpace_Probability = 0;
+    /// <summary> OverpaceCorrection, Stamina is consumed in proportion to this. </summary>
+    float OverpaceCorrection = 1;
     /// <summary> Additinal something </summary>
     float Additional_Acceleration = 0;
     /// <summary> Additinal something </summary>
@@ -62,11 +65,15 @@ public class PlayerInput : MonoBehaviour
     /// <summary> is this overtaking now</summary>
     [SerializeField]
     bool Overtake = false;
+    /// <summary> is this overpaced </summary>
+    [SerializeField]
+    bool Overpace = false;
     /// <summary> num of -> is this on skill now </summary>
     int isOnSkill = 0;
     /// <summary> is this moving on lanes now </summary>
     [SerializeField]
     bool ismovingLane = false;
+    /// <summary> rotate Direction Vector </summary>
     Vector3 Torquedir;
     void Awake()
     {
@@ -75,12 +82,12 @@ public class PlayerInput : MonoBehaviour
         SetGetOverpace_Probability();
         SetHP();
         Invoke("InStart", 3f);//임시코드 
+        transform.rotation = Quaternion.Euler(0, 0, 0);
     }
     void Start()
     {
         anim = GetComponent<Animator>();
         rigid.velocity = Vector3.zero;
-        // rigid = GetComponent<Rigidbody>();
     }
 
     // Update is called once per frame
@@ -199,6 +206,23 @@ public class PlayerInput : MonoBehaviour
         Basic_Acceleration = 5 + Power * 0.005f; // 파워1000이면 가속 초당 5+5, 최대 가속은 보통 100정도일듯
         if (mysit == Situation.spurt) Basic_Acceleration += (Speed * 0.0025f); // 위의 절반치
     }
+    void CheckOverpace()
+    {
+        if (Overpace) return;
+        int rand_Overpace = Random.Range(1, 101); // 1, 2, 3, ..., 100
+        if (GetOverpace_Probability >= rand_Overpace)
+        {
+            StartCoroutine(SetAdditional_Acc(Basic_Acceleration / 10, 9999f));
+            OverpaceCorrection += 0.2f;
+            Overpace = true;
+        }
+    }
+    void UndoOverpace()
+    {
+        if (!Overpace) return;
+        OverpaceCorrection -= 0.2f;
+        Overpace = false;
+    }
     void SetGetOverpace_Probability()
     {
         GetOverpace_Probability = 100 - 0.1f * Intelligence; //퍼센트단위, 지능1000이면 0%임
@@ -233,12 +257,14 @@ public class PlayerInput : MonoBehaviour
         Debug.Log("출발");
         mysit = Situation.early;
         StartCoroutine(SetAdditional_Acc(15f, 3f));
+        CheckOverpace();
     }
     public void InMid()
     {
         mysit = Situation.mid;
         Basic_Velocity = 25 + 0.5f * Intelligence * 0.1f;
         Max_Velocity = Basic_Velocity * 1.5f;
+        CheckOverpace();
     }
     public void InLast()
     {
@@ -250,6 +276,7 @@ public class PlayerInput : MonoBehaviour
     {
         mysit = Situation.spurt;
         SetAcceleration();
+        UndoOverpace();
         Basic_Velocity = (Intelligence * 0.5f + Speed * 2.5f) * 0.5f * 0.1f * correction;
         Max_Velocity = Basic_Velocity * 1.25f;
         // 지능스탯 1000, 스피드 스탯 1000이면 무보정 최대 150일듯
@@ -282,11 +309,11 @@ public class PlayerInput : MonoBehaviour
                     {
                         if (time3 < 2f) // 슬립스트림 2초 지속
                         {
-                            HP -= Mathf.Pow(rigid.velocity.magnitude, 2) / 50;
+                            HP -= Mathf.Pow(rigid.velocity.magnitude, 2) / 50 * OverpaceCorrection;
                         }
                         else
                         {
-                            HP -= Mathf.Pow(rigid.velocity.magnitude, 2) / 50 / 2;
+                            HP -= Mathf.Pow(rigid.velocity.magnitude, 2) / 50 / 2 * OverpaceCorrection;
                         }
 
                     }
@@ -303,9 +330,9 @@ public class PlayerInput : MonoBehaviour
 
                 Vector3 projvec = Vector3.Project(rigid.velocity, transform.forward);
                 if (time2 > 3f)
-                    if (projvec.magnitude > Max_Velocity&& mysit!=Situation.spurt && isOnSkill == 0)
+                    if (projvec.magnitude > Max_Velocity && mysit != Situation.spurt && isOnSkill == 0)
                     {
-                        HP -= Mathf.Pow(rigid.velocity.magnitude, 2);
+                        HP -= Mathf.Pow(rigid.velocity.magnitude, 2) * OverpaceCorrection;
                         // Debug.Log($" {this.name} , {projvec.magnitude}, 오버페이스");
                         Debug.Log($" {this.name} , {projvec.magnitude}, 오버페이스");
 
