@@ -9,7 +9,8 @@ public enum Situation {
 };
 public class SystemClass : MonoBehaviour
 {
+    [SerializeField] float timeScale = 1f;
     void Start(){
-        Time.timeScale = 10f;
+        Time.timeScale = timeScale;
     }
 }
