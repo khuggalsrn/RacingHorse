@@ -329,6 +329,8 @@ public class ComStatus : MonoBehaviour
             time5 += 0.02f;
         float velocityRand1 = Random.Range(0.0f, 0.1f);
 
+        
+
         Al_Lane_Check();
 
 
@@ -336,11 +338,13 @@ public class ComStatus : MonoBehaviour
 
         if (time2 > 0)
         {
-            Al_Lane_Move();
-            if (isOnSkill > 0 || mysit == Situation.spurt)
+            if (isOnSkill > 0 || mysit == Situation.spurt || Overtake)
                 Controll_anim("Sprint");
             else
                 Controll_anim("Forward");
+                
+            Al_Lane_Move();
+
             if (HP > 0)
             {
                 Cur_Target_Velocity = (Basic_Velocity + Additional_Velocity + Max_Velocity) / 2;
