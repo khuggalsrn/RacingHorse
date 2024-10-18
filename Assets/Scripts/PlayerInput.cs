@@ -67,10 +67,7 @@ public class PlayerInput : MonoBehaviour
     /// <summary> is this moving on lanes now </summary>
     [SerializeField]
     bool ismovingLane = false;
-    Vector3 Dir;
     Vector3 Torquedir;
-    float Force;
-    float time = 0;
     void Awake()
     {
         SetVelocity();
@@ -89,18 +86,18 @@ public class PlayerInput : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if (anim.GetBool("Forward"))
-        {
-            Dir = transform.forward;
-        }
-        else if (anim.GetBool("Backward"))
-        {
-            Dir = -transform.forward;
-        }
-        else
-        {
-            Dir = Vector3.zero;
-        }
+        // if (anim.GetBool("Forward"))
+        // {
+        //     Dir = transform.forward;
+        // }
+        // else if (anim.GetBool("Backward"))
+        // {
+        //     Dir = -transform.forward;
+        // }
+        // else
+        // {
+        //     Dir = Vector3.zero;
+        // }
         // if(Input.GetKeyDown(KeyCode.W)){
         //     speedLimit = 100;
         //     anim.SetBool("Forward",true);
@@ -124,7 +121,7 @@ public class PlayerInput : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.LeftShift))
         {
             isspurt = true;
-            Dir = transform.forward;
+            // Dir = transform.forward;
             anim.SetBool("Forward", false);
             anim.SetBool("Sprint", true);
         }
