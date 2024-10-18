@@ -258,6 +258,7 @@ public class PlayerInput : MonoBehaviour
         mysit = Situation.early;
         StartCoroutine(SetAdditional_Acc(15f, 3f));
         CheckOverpace();
+        anim.SetBool("Sprint", true);
     }
     public void InMid()
     {

@@ -5,7 +5,8 @@ using UnityEngine;
 
 public class ComStatus : MonoBehaviour
 {
-    Animator anim;
+    Animator horseAnim;
+    [SerializeField] Animator humanAnim;
     /// <summary> physics body </summary>
     public Rigidbody rigid;
     /// <summary> Status </summary>
@@ -95,7 +96,7 @@ public class ComStatus : MonoBehaviour
     }
     void Start()
     {
-        anim = GetComponent<Animator>();
+        horseAnim = GetComponent<Animator>();
         rigid.velocity = Vector3.zero;
     }
     //기본세팅
@@ -189,6 +190,7 @@ public class ComStatus : MonoBehaviour
         mysit = Situation.early;
         StartCoroutine(SetAdditional_Acc(15f, 3f));
         CheckOverpace();
+        horseAnim.SetBool("Sprint", true);
     }
     public void InMid()
     {
@@ -297,6 +299,23 @@ public class ComStatus : MonoBehaviour
             }
         }
     }
+    void Controll_anim(string animName)
+    {
+        if (animName == "Sprint")
+        {
+            horseAnim.SetBool("Sprint", true);
+            humanAnim.SetBool("Sprint", true);
+            horseAnim.SetBool("Forward", false);
+            humanAnim.SetBool("Forward", false);
+        }
+        else if (animName == "Forward")
+        {
+            horseAnim.SetBool("Forward", true);
+            humanAnim.SetBool("Forward", true);
+            horseAnim.SetBool("Sprint", false);
+            humanAnim.SetBool("Sprint", false);
+        }
+    }
     private void FixedUpdate()
     {
         time1 += 0.02f;
@@ -318,6 +337,10 @@ public class ComStatus : MonoBehaviour
         if (time2 > 0)
         {
             Al_Lane_Move();
+            if (isOnSkill > 0 || mysit == Situation.spurt)
+                Controll_anim("Sprint");
+            else
+                Controll_anim("Forward");
             if (HP > 0)
             {
                 Cur_Target_Velocity = (Basic_Velocity + Additional_Velocity + Max_Velocity) / 2;
