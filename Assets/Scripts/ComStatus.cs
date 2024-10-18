@@ -21,7 +21,7 @@ public class ComStatus : MonoBehaviour
     /// <summary> Velocity will be related Speed & Intelligence </summary>
     [SerializeField]
     float Basic_Velocity, Max_Velocity = 0;
-    [SerializeField] 
+    [SerializeField]
     /// <summary> Acceleration will be related Power </summary>
     float Basic_Acceleration = 0;
     /// <summary> CurTarget = Basic + Additional </summary>
@@ -38,16 +38,17 @@ public class ComStatus : MonoBehaviour
     [SerializeField]
     float Additional_Acceleration = 0;
     /// <summary> Additinal something </summary>
+    [SerializeField]
     float Additional_Velocity = 0;
     /// <summary> Correction value by strategy </summary>
     float correction = 0;
     /// <summary> when this is on slipstream, HP will be less reduced</summary>
     bool is_slipstream = false;
     /// <summary> Basic timer </summary>
-    [SerializeField] 
+    [SerializeField]
     float time1 = 0;
     /// <summary> start after timer </summary> ///
-    [SerializeField] 
+    [SerializeField]
     float time2 = 0;
     /// <summary> moving lane timer </summary>
     [SerializeField]
@@ -77,13 +78,19 @@ public class ComStatus : MonoBehaviour
     /// <summary> is this moving on lanes now </summary>
     [SerializeField]
     bool ismovingLane = false;
+    /// <summary> Other Horses number of inner lane</summary>
+    int InnerLane = 100;
+    /// <summary> Other Horses number of same lane</summary>
+    int SameLane = 0;
+    /// <summary> Other Horses number of outer lane</summary>
+    int OuterLane = 100;
     void Awake()
     {
         SetVelocity();
         SetAcceleration();
         SetGetOverpace_Probability();
         SetHP();
-        Invoke("InStart",3f);
+        Invoke("InStart", 3f);
         transform.rotation = Quaternion.Euler(0, 0, 0);
     }
     void Start()
@@ -180,7 +187,7 @@ public class ComStatus : MonoBehaviour
     public void InStart()
     { //게이트 오픈 출발시 가속 15추가해줌
         mysit = Situation.early;
-        StartCoroutine(SetAdditional_Acc(15f,3f));
+        StartCoroutine(SetAdditional_Acc(15f, 3f));
         CheckOverpace();
     }
     public void InMid()
@@ -201,127 +208,136 @@ public class ComStatus : MonoBehaviour
         mysit = Situation.spurt;
         SetAcceleration();
         UndoOverpace();
-        Basic_Velocity = (Intelligence * 0.5f + Speed * 2.5f) * 0.5f * 0.1f * Mathf.Pow(correction,2);
+        Basic_Velocity = (Intelligence * 0.5f + Speed * 2.5f) * 0.5f * 0.1f * Mathf.Pow(correction, 2);
         Max_Velocity = Basic_Velocity * 1.25f;
         StartCoroutine(SetAdditional_Acc(10, 9999f));
         // 지능스탯 1000, 스피드 스탯 1000이면 무보정 최대 150일듯
+    }
+    void Al_Lane_Check()
+    {
+        if (CurLaneNum > 0)
+        {
+            SameLane = CurLane.transform.parent.GetChild(CurLaneNum - 1).GetComponent<DirectionLine>().Horses.Count;
+            if (CurLaneNum > 1)
+                InnerLane = CurLane.transform.parent.GetChild(CurLaneNum - 2).GetComponent<DirectionLine>().Horses.Count;
+            else
+                InnerLane = 100;
+            if (CurLaneNum < CurLane.transform.parent.childCount)
+                OuterLane = CurLane.transform.parent.GetChild(CurLaneNum).GetComponent<DirectionLine>().Horses.Count;
+            else
+                OuterLane = 100;
+        }
+    }
+    void Al_Lane_Move()
+    {
+        if (InnerLane == 0)
+        {
+            time3 += 0.02f;
+            if (time3 > 0.5f)
+            {
+                rigid.velocity += transform.right * 25;
+                ismovingLane = true;
+                Invoke("isnotmoveLane", 1f);
+                Debug.Log("turn right");
+                time3 -= 0.1f;
+            }
+        }
+        else
+        {
+            time3 = 0;
+        }
+
+        if (Overtake && !ismovingLane)
+        {
+            if (SameLane > 1)
+            {
+                if (InnerLane == 0)
+                {
+                    rigid.velocity += transform.right * 25;
+                    ismovingLane = true;
+                    Invoke("isnotmoveLane", 0.25f);
+                    Debug.Log($" {this.name} 추월 안쪽으로");
+                }
+                else if (OuterLane == 0)
+                {
+                    rigid.velocity -= transform.right * 25;
+                    ismovingLane = true;
+                    Invoke("isnotmoveLane", 0.25f);
+                    Debug.Log($" {this.name} 추월 바깥쪽으로");
+                }
+                else
+                {
+                    // Debug.Log("가로막힘 추월실패");
+                }
+            }
+            else
+            {
+
+            }
+        }
+    }
+    void HP_Consumption()
+    {
+        Vector3 projvec = Vector3.Project(rigid.velocity, transform.forward);
+
+        if (projvec.magnitude > Max_Velocity && mysit != Situation.spurt && isOnSkill == 0)
+        {
+            HP -= Mathf.Pow(rigid.velocity.magnitude, 2);
+            Debug.Log($" {this.name} , {projvec.magnitude}, 오버페이스");
+        }
+        else
+        {
+            if (time5 < 2f) // 슬립스트림 2초지속
+            {
+                HP -= Mathf.Pow(rigid.velocity.magnitude, 2) / 50 * OverpaceCorrection;
+            }
+            else
+            {
+                HP -= Mathf.Pow(rigid.velocity.magnitude, 2) / 50 / 2 * OverpaceCorrection;
+            }
+        }
     }
     private void FixedUpdate()
     {
         time1 += 0.02f;
         if (time1 > 3f)
             time2 += 0.02f;
+        if (time5 > 2f) // 앞에 2초간 무언가 뒤 에 있었으면
+            time4 += 0.02f; // 추월시도 타이머
+        else
+            time4 = 0;
         if (is_slipstream)
             time5 += 0.02f;
-        time4 += 0.02f;
         float velocityRand1 = Random.Range(0.0f, 0.1f);
 
-        int InnerLane = 100;
-        int SameLane = 0;
-        int OuterLane = 100;
+        Al_Lane_Check();
 
-        if (CurLaneNum > 0)
-        {
-            SameLane = CurLane.transform.parent.GetChild(CurLaneNum - 1).GetComponent<DirectionLine>().Horses.Count;
-            if (CurLaneNum > 1)
-                InnerLane = CurLane.transform.parent.GetChild(CurLaneNum - 2).GetComponent<DirectionLine>().Horses.Count;
-            if (CurLaneNum < CurLane.transform.parent.childCount)
-                OuterLane = CurLane.transform.parent.GetChild(CurLaneNum).GetComponent<DirectionLine>().Horses.Count;
 
-        }
-
+        Vector3 Speed_R_value = Vector3.zero;
 
         if (time2 > 0)
         {
-            if (InnerLane == 0)
-            {
-                time3 += 0.02f;
-                if (time3 > 0.5f)
-                {
-                    rigid.velocity += transform.right * 25;
-                    ismovingLane = true;
-                    Invoke("isnotmoveLane", 1f);
-                    Debug.Log("turn right");
-                    time3 -= 0.1f;
-                }
-            }
-            else
-            {
-                time3 = 0;
-            }
-
-            if (Overtake && !ismovingLane)
-            {
-                if (SameLane > 1)
-                {
-                    if (InnerLane == 0)
-                    {
-                        rigid.velocity += transform.right * 25;
-                        ismovingLane = true;
-                        Invoke("isnotmoveLane", 0.25f);
-                        Debug.Log($" {this.name} 추월 안쪽으로");
-                    }
-                    else if (OuterLane == 0)
-                    {
-                        rigid.velocity -= transform.right * 25;
-                        ismovingLane = true;
-                        Invoke("isnotmoveLane", 0.25f);
-                        Debug.Log($" {this.name} 추월 바깥쪽으로");
-                    }
-                    else
-                    {
-                        // Debug.Log("가로막힘 추월실패");
-                    }
-                }
-                else
-                {
-
-                }
-            }
+            Al_Lane_Move();
             if (HP > 0)
             {
                 Cur_Target_Velocity = (Basic_Velocity + Additional_Velocity + Max_Velocity) / 2;
                 Cur_Acceleration = Basic_Acceleration + Additional_Acceleration;
-
+                Speed_R_value = new Vector3(
+                        transform.forward.x * Cur_Acceleration,
+                        transform.forward.y * Cur_Acceleration,
+                        transform.forward.z * Cur_Acceleration);
                 if (time2 > 3f) // 출발 후 3초 후부터 체력소모
                 {
-
-                    Vector3 projvec = Vector3.Project(rigid.velocity, transform.forward);
-
-                    if (projvec.magnitude > Max_Velocity && mysit!=Situation.spurt && isOnSkill == 0)
-                    {
-                        HP -= Mathf.Pow(rigid.velocity.magnitude, 2);
-                        Debug.Log($" {this.name} , {projvec.magnitude}, 오버페이스");
-                    }
-                    else
-                    {
-                        if (time5 < 2f) // 슬립스트림 2초지속
-                        {
-                            HP -= Mathf.Pow(rigid.velocity.magnitude, 2) / 50 * OverpaceCorrection;
-                        }
-                        else
-                        {
-                            HP -= Mathf.Pow(rigid.velocity.magnitude, 2) / 50 / 2 * OverpaceCorrection;
-                        }
-                    }
+                    HP_Consumption();
                 }
-                if (time2 < 0.2f) return;
                 if (rigid.velocity.magnitude < Cur_Target_Velocity)
                 {
-                    rigid.velocity +=
-                        new Vector3(
-                            transform.forward.x * Cur_Acceleration,
-                        transform.forward.y * Cur_Acceleration,
-                        transform.forward.z * Cur_Acceleration) / (5 - velocityRand1);
+                    rigid.velocity += Speed_R_value / (5 - velocityRand1);
                 }
             }
             else
             {
-                rigid.velocity +=
-                        new Vector3(
-                            transform.forward.x * Cur_Acceleration,
-                        transform.forward.y * Cur_Acceleration,
-                        transform.forward.z * Cur_Acceleration) / (15 - velocityRand1);
+                rigid.velocity += Speed_R_value / (15 - velocityRand1);
                 gameObject.layer = LayerMask.NameToLayer("HP0Horse");
             }
         }
@@ -332,17 +348,16 @@ public class ComStatus : MonoBehaviour
         if (other.name == "InMid") InMid();
         if (other.name == "Inlast") InLast();
         if (other.name == "Onspurt") OnSpurtLine();
-        if (other.name == "gall") {
+        if (other.name == "gall")
+        {
         }
     }
     private void OnTriggerStay(Collider other)
     {
         if (other.tag != "Animal" && other.tag != "Player") { return; }
-       
+
         is_slipstream = true;
-        if (time4 < 1f) { return; }
-        time4 = 0f;
-        if (other.gameObject.GetComponent<Rigidbody>().velocity.magnitude < Cur_Target_Velocity && !Overtake)
+        if (time4 > 0.5f && other.gameObject.GetComponent<Rigidbody>().velocity.magnitude < Cur_Target_Velocity && !Overtake)
         {
             StartCoroutine(OverTaking(10f, 3f));
             Debug.Log("추월시도");
