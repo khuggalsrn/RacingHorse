@@ -5,6 +5,7 @@ using UnityEngine;
 
 public class ComStatus : MonoBehaviour
 {
+    Animator anim;
     /// <summary> physics body </summary>
     public Rigidbody rigid;
     /// <summary> Status </summary>
@@ -20,6 +21,7 @@ public class ComStatus : MonoBehaviour
     /// <summary> Velocity will be related Speed & Intelligence </summary>
     [SerializeField]
     float Basic_Velocity, Max_Velocity = 0;
+    [SerializeField] 
     /// <summary> Acceleration will be related Power </summary>
     float Basic_Acceleration = 0;
     /// <summary> CurTarget = Basic + Additional </summary>
@@ -30,6 +32,8 @@ public class ComStatus : MonoBehaviour
     float Cur_Acceleration = 0;
     /// <summary> Overpace probability will be related Intelligence </summary>
     float GetOverpace_Probability = 0;
+    /// <summary> OverpaceCorrection, Stamina is consumed in proportion to this. </summary>
+    float OverpaceCorrection = 1;
     /// <summary> Additinal something </summary>
     [SerializeField]
     float Additional_Acceleration = 0;
@@ -40,9 +44,11 @@ public class ComStatus : MonoBehaviour
     /// <summary> when this is on slipstream, HP will be less reduced</summary>
     bool is_slipstream = false;
     /// <summary> Basic timer </summary>
-    [SerializeField] float time1 = 0;
+    [SerializeField] 
+    float time1 = 0;
     /// <summary> start after timer </summary> ///
-    [SerializeField] float time2 = 0;
+    [SerializeField] 
+    float time2 = 0;
     /// <summary> moving lane timer </summary>
     [SerializeField]
     float time3 = 0; //기본 레인이동 시간
@@ -63,6 +69,9 @@ public class ComStatus : MonoBehaviour
     /// <summary> is this overtaking now</summary>
     [SerializeField]
     bool Overtake = false;
+    /// <summary> is this overpaced </summary>
+    [SerializeField]
+    bool Overpace = false;
     /// <summary> num of -> is this on skill now </summary>
     int isOnSkill = 0;
     /// <summary> is this moving on lanes now </summary>
@@ -74,8 +83,13 @@ public class ComStatus : MonoBehaviour
         SetAcceleration();
         SetGetOverpace_Probability();
         SetHP();
-        Invoke("InStart",3f);//임시코드 
+        Invoke("InStart",3f);
         transform.rotation = Quaternion.Euler(0, 0, 0);
+    }
+    void Start()
+    {
+        anim = GetComponent<Animator>();
+        rigid.velocity = Vector3.zero;
     }
     //기본세팅
     public void SetLane(object[] param)
@@ -117,6 +131,23 @@ public class ComStatus : MonoBehaviour
         Basic_Acceleration = 10 + Power * 0.005f; // 파워1000이면 가속 초당 10+5, 최대 가속은 보통 15정도일듯
         if (mysit == Situation.spurt) Basic_Acceleration += (Speed * 0.0025f); // 위의 절반치
     }
+    void CheckOverpace()
+    {
+        if (Overpace) return;
+        int rand_Overpace = Random.Range(1, 101); // 1, 2, 3, ..., 100
+        if (GetOverpace_Probability >= rand_Overpace)
+        {
+            StartCoroutine(SetAdditional_Acc(Basic_Acceleration / 10, 9999f));
+            OverpaceCorrection += 0.2f;
+            Overpace = true;
+        }
+    }
+    void UndoOverpace()
+    {
+        if (!Overpace) return;
+        OverpaceCorrection -= 0.2f;
+        Overpace = false;
+    }
     void SetGetOverpace_Probability()
     {
         GetOverpace_Probability = 100 - 0.1f * Intelligence; //퍼센트단위, 지능1000이면 0%임
@@ -150,12 +181,14 @@ public class ComStatus : MonoBehaviour
     { //게이트 오픈 출발시 가속 15추가해줌
         mysit = Situation.early;
         StartCoroutine(SetAdditional_Acc(15f,3f));
+        CheckOverpace();
     }
     public void InMid()
     {
         mysit = Situation.mid;
         Basic_Velocity = 25 + 0.5f * Intelligence * 0.1f;
         Max_Velocity = Basic_Velocity * 1.1f;
+        CheckOverpace();
     }
     public void InLast()
     {
@@ -167,6 +200,7 @@ public class ComStatus : MonoBehaviour
     {
         mysit = Situation.spurt;
         SetAcceleration();
+        UndoOverpace();
         Basic_Velocity = (Intelligence * 0.5f + Speed * 2.5f) * 0.5f * 0.1f * Mathf.Pow(correction,2);
         Max_Velocity = Basic_Velocity * 1.25f;
         StartCoroutine(SetAdditional_Acc(10, 9999f));
@@ -261,13 +295,13 @@ public class ComStatus : MonoBehaviour
                     }
                     else
                     {
-                        if (!is_slipstream)
+                        if (time5 < 2f) // 슬립스트림 2초지속
                         {
-                            HP -= Mathf.Pow(rigid.velocity.magnitude, 2) / 50;
+                            HP -= Mathf.Pow(rigid.velocity.magnitude, 2) / 50 * OverpaceCorrection;
                         }
                         else
                         {
-                            HP -= Mathf.Pow(rigid.velocity.magnitude, 2) / 50 / 2;
+                            HP -= Mathf.Pow(rigid.velocity.magnitude, 2) / 50 / 2 * OverpaceCorrection;
                         }
                     }
                 }
