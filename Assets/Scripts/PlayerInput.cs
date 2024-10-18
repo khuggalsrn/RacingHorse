@@ -10,7 +10,7 @@ public class PlayerInput : MonoBehaviour
     /// <summary> physics body </summary> ///
     public Rigidbody rigid;
     /// <summary> Status </summary>
-    [SerializeField] 
+    [SerializeField]
     public int Speed, Stamina, Power, Intelligence;
     /// <summary> Racing strategy </summary>
     public Strategy mystr;
@@ -229,7 +229,7 @@ public class PlayerInput : MonoBehaviour
     }
     void SetHP()
     {
-        MaxHP = (Stamina + 2000) * 300 * correction;
+        MaxHP = (Stamina + 2000) * 100 * correction;
         HP = MaxHP;
     }
 
@@ -281,6 +281,27 @@ public class PlayerInput : MonoBehaviour
         Max_Velocity = Basic_Velocity * 1.25f;
         // 지능스탯 1000, 스피드 스탯 1000이면 무보정 최대 150일듯
     }
+    void HP_Consumption()
+    {
+        Vector3 projvec = Vector3.Project(rigid.velocity, transform.forward);
+        if (projvec.magnitude > Max_Velocity && mysit != Situation.spurt && isOnSkill == 0)
+        {
+            HP -= Mathf.Pow(rigid.velocity.magnitude, 2) * OverpaceCorrection;
+            // Debug.Log($" {this.name} , {projvec.magnitude}, 오버페이스");
+            Debug.Log($" {this.name} , {projvec.magnitude}, 오버페이스");
+        }
+        else
+        {
+            if (time3 < 2f) // 슬립스트림 2초 지속
+            {
+                HP -= Mathf.Pow(rigid.velocity.magnitude, 2) / 50 * OverpaceCorrection;
+            }
+            else
+            {
+                HP -= Mathf.Pow(rigid.velocity.magnitude, 2) / 50 / 2 * OverpaceCorrection;
+            }
+        }
+    }
     private void FixedUpdate()
     {
         time1 += 0.02f;
@@ -289,64 +310,38 @@ public class PlayerInput : MonoBehaviour
         if (is_slipstream)
             time3 += 0.02f;
 
+
+        Vector3 Speed_R_value = Vector3.zero;
         if (time2 > 0)
         {
             if (HP > 0)
             {
                 Cur_Target_Velocity = (Basic_Velocity + Additional_Velocity + Max_Velocity) / 2;
                 Cur_Acceleration = Basic_Acceleration + Additional_Acceleration;
-
+                Speed_R_value = new Vector3(
+                        transform.forward.x * Cur_Acceleration,
+                        transform.forward.y * Cur_Acceleration,
+                        transform.forward.z * Cur_Acceleration);
 
                 if (isspurt)
                 {
-                    rigid.velocity +=
-                            new Vector3(
-                                transform.forward.x * Cur_Acceleration,
-                            transform.forward.y * Cur_Acceleration,
-                            transform.forward.z * Cur_Acceleration) / 2.5f;
-
-                    if (time2 > 3f) // 출발 후 3초 후부터 체력소모
-                    {
-                        if (time3 < 2f) // 슬립스트림 2초 지속
-                        {
-                            HP -= Mathf.Pow(rigid.velocity.magnitude, 2) / 50 * OverpaceCorrection;
-                        }
-                        else
-                        {
-                            HP -= Mathf.Pow(rigid.velocity.magnitude, 2) / 50 / 2 * OverpaceCorrection;
-                        }
-
-                    }
-
+                    rigid.velocity += Speed_R_value / 2.5f;
                 }
                 else
                 {
-                    rigid.velocity +=
-                    new Vector3(
-                        transform.forward.x * Cur_Acceleration,
-                    transform.forward.y * Cur_Acceleration,
-                    transform.forward.z * Cur_Acceleration) / 10;
+                    rigid.velocity += Speed_R_value / 10;
                 }
 
-                Vector3 projvec = Vector3.Project(rigid.velocity, transform.forward);
-                if (time2 > 3f)
-                    if (projvec.magnitude > Max_Velocity && mysit != Situation.spurt && isOnSkill == 0)
-                    {
-                        HP -= Mathf.Pow(rigid.velocity.magnitude, 2) * OverpaceCorrection;
-                        // Debug.Log($" {this.name} , {projvec.magnitude}, 오버페이스");
-                        Debug.Log($" {this.name} , {projvec.magnitude}, 오버페이스");
-
-                    }
-
+                if (time2 > 3f && isspurt) // 체력소모는 3초 후부터, LShift(spurt버튼)를 눌렀을 경우에만
+                {
+                    HP_Consumption();
+                }
 
             }
             else
             {
-                rigid.velocity +=
-                        new Vector3(
-                            transform.forward.x * Cur_Acceleration,
-                        transform.forward.y * Cur_Acceleration,
-                        transform.forward.z * Cur_Acceleration) / 15;
+                rigid.velocity += Speed_R_value / 15;
+                gameObject.layer = LayerMask.NameToLayer("HP0Horse");
             }
         }
         rigid.AddTorque(Torquedir * 1000, ForceMode.Impulse);
