@@ -1588,7 +1588,7 @@ PrefabInstance:
       objectReference: {fileID: 1906031054}
     - target: {fileID: 1473285163560770373, guid: 1020ee7fcdb11444aa3a8bdc2e723e7b, type: 3}
       propertyPath: m_VersionIndex
-      value: 458
+      value: 461
       objectReference: {fileID: 0}
     - target: {fileID: 1473285163560770373, guid: 1020ee7fcdb11444aa3a8bdc2e723e7b, type: 3}
       propertyPath: m_Tangents.Array.data[424].x
@@ -2092,7 +2092,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: gall
+  m_text: Goal
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}

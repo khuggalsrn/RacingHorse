@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
-public class GallLine : MonoBehaviour
+public class GoalLine : MonoBehaviour
 {
     List<string> Horses = new List<string>();
     [SerializeField] Text One;
