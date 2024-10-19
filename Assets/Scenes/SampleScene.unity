@@ -1567,6 +1567,10 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 240707930}
     - target: {fileID: 1888169259, guid: 1020ee7fcdb11444aa3a8bdc2e723e7b, type: 3}
+      propertyPath: m_Name
+      value: goal
+      objectReference: {fileID: 0}
+    - target: {fileID: 1888169259, guid: 1020ee7fcdb11444aa3a8bdc2e723e7b, type: 3}
       propertyPath: m_IsActive
       value: 0
       objectReference: {fileID: 0}
@@ -1584,7 +1588,7 @@ PrefabInstance:
       objectReference: {fileID: 1906031054}
     - target: {fileID: 1473285163560770373, guid: 1020ee7fcdb11444aa3a8bdc2e723e7b, type: 3}
       propertyPath: m_VersionIndex
-      value: 455
+      value: 458
       objectReference: {fileID: 0}
     - target: {fileID: 1473285163560770373, guid: 1020ee7fcdb11444aa3a8bdc2e723e7b, type: 3}
       propertyPath: m_Tangents.Array.data[424].x
