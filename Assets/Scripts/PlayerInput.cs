@@ -77,17 +77,17 @@ public class PlayerInput : MonoBehaviour
     Vector3 Torquedir;
     void Awake()
     {
+        anim = GetComponent<Animator>();
+        rigid.velocity = Vector3.zero;
+        transform.rotation = Quaternion.Euler(0, 0, 0);
+    }
+    void Start()
+    {
         SetVelocity();
         SetAcceleration();
         SetGetOverpace_Probability();
         SetHP();
         Invoke("InStart", 3f);//임시코드 
-        transform.rotation = Quaternion.Euler(0, 0, 0);
-    }
-    void Start()
-    {
-        anim = GetComponent<Animator>();
-        rigid.velocity = Vector3.zero;
     }
 
     // Update is called once per frame
