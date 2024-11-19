@@ -86,17 +86,17 @@ public class ComStatus : MonoBehaviour
     int OuterLane = 100;
     void Awake()
     {
+        horseAnim = GetComponent<Animator>();
+        rigid.velocity = Vector3.zero;
+        transform.rotation = Quaternion.Euler(0, 0, 0);
+    }
+    void Start()
+    {
         SetVelocity();
         SetAcceleration();
         SetGetOverpace_Probability();
         SetHP();
         Invoke("InStart", 3f);
-        transform.rotation = Quaternion.Euler(0, 0, 0);
-    }
-    void Start()
-    {
-        horseAnim = GetComponent<Animator>();
-        rigid.velocity = Vector3.zero;
     }
     //기본세팅
     public void SetLane(object[] param)
